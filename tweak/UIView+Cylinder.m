@@ -68,6 +68,12 @@ along with Cylinder.  If not, see <http://www.gnu.org/licenses/>.
     for (UIView *subview in old.subviews)
     {
         [subview removeFromSuperview];
+        
+        // HACK to prevent wiggle mode from inadvertently triggering on icons when scrolling
+        // This is necessary because the icon views don't automatically receive the touchesEnded/touchesCancelled message when they're stripped from their superview
+        // Somewhat confusing that this doesn't happen automatically. Is this an oversight on Apple's part?
+        [subview touchesCancelled: [NSSet set] withEvent: nil];
+        
         [new addSubview: subview];
     }
     
