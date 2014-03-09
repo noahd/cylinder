@@ -22,4 +22,15 @@ along with Cylinder.  If not, see <http://www.gnu.org/licenses/>.
 @interface UIView(Cylinder)
 @property (nonatomic, assign) BOOL isOnScreen;
 @property (nonatomic, assign) BOOL hasDifferentSubviews;
+
+/// Returns whether the receiver is a transform view; see \c -transformify.
+@property (nonatomic, readonly) BOOL isTransformView;
+
+/// Replaces the receiver with a CATransformLayer-backed view — and returns said view — by taking all of its subviews and taking its position in its superview.
+/// Does nothing when the receiver is already a transform view.
+- (UIView *)transformify;
+
+/// Reverses all actions done in \c -transformify and returns the original receiver.
+- (UIView *)detransformify;
+
 @end

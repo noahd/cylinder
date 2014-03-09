@@ -72,6 +72,7 @@ void genscrol(UIScrollView *scrollView, UIView *view)
         {
             layout_icons(view);
         }
+        view = [view transformify];
         _enabled = manipulate(view, offset, _rand); //defined in luashit.m
     }
 }
@@ -79,7 +80,7 @@ void genscrol(UIScrollView *scrollView, UIView *view)
 void end_scroll(UIScrollView *self)
 {
     for(UIView *view in self.subviews)
-        reset_everything(view);
+        reset_everything([view detransformify]);
     _rand = arc4random();
 }
 
