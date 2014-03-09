@@ -90,7 +90,7 @@ along with Cylinder.  If not, see <http://www.gnu.org/licenses/>.
             return nil; 
         }
         
-        NSLog(@"Transformifying %@ -> %@", viewToReplace, self);
+        // NSLog(@"Transformifying %@ -> %@", viewToReplace, self);
         
         self.usurpedView = viewToReplace;
         
@@ -115,7 +115,7 @@ along with Cylinder.  If not, see <http://www.gnu.org/licenses/>.
 - (UIView *)detransformify
 {
     UIView *orig = self.usurpedView;
-    NSLog(@"Detransformifying %@ -> %@", self, orig);
+    // NSLog(@"Detransformifying %@ -> %@", self, orig);
     [super.class replaceView: self withView: orig];
     self.usurpedView = nil;
     return orig;
@@ -135,7 +135,7 @@ along with Cylinder.  If not, see <http://www.gnu.org/licenses/>.
 
 - (void)dealloc
 {
-    NSLog(@"Deallocating transform view %@", self);
+    // NSLog(@"Deallocating transform view %@", self);
     [_usurpedView release];
     [super dealloc];
 }
