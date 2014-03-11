@@ -98,6 +98,21 @@ void SB_scrollViewDidEndScrollingAnimation(id self, SEL _cmd, UIScrollView *scro
     end_scroll(scrollView);
 }
 
+static void(*original_SB_scrollViewDidEndDragging)(id, SEL, id, BOOL);
+void SB_scrollViewDidEndDragging(id self, SEL _cmd, UIScrollView *scrollView, BOOL willDecelerate)
+{
+    original_SB_scrollViewDidEndDragging(self, _cmd, scrollView, willDecelerate);
+    // NSLog(@"Did end dragging, %@", willDecelerate ? @"will decelerate" : @"will NOT decelerate");
+    if (!willDecelerate)
+    {
+        // At this point, no other delegate methods will be called until the user starts scrolling again.
+        // This can happen when the touch is canceled, e.g. by locking the device while scrolling.
+        // In some cases (especially with the transform layer), not calling this will lead to glitchy behavior,
+        // e.g. the homescreen page missing after the first unlock
+        end_scroll(scrollView);
+    }
+}
+
 //in iOS 6-, the dock is actually *BEHIND* the icon scroll view, so this fixes that
 static void(*original_SB_scrollViewWillBeginDragging)(id, SEL, id);
 void SB_scrollViewWillBeginDragging(id self, SEL _cmd, UIScrollView *scrollView)
@@ -290,6 +305,8 @@ static void initialize()
     MSHookMessageEx(cls, @selector(scrollViewDidScroll:), (IMP)SB_scrollViewDidScroll, (IMP *)&original_SB_scrollViewDidScroll);
     MSHookMessageEx(cls, @selector(scrollViewDidEndDecelerating:), (IMP)SB_scrollViewDidEndDecelerating, (IMP *)&original_SB_scrollViewDidEndDecelerating);
     MSHookMessageEx(cls, @selector(scrollViewDidEndScrollingAnimation:), (IMP)SB_scrollViewDidEndScrollingAnimation, (IMP *)&original_SB_scrollViewDidEndScrollingAnimation);
+    MSHookMessageEx(cls, @selector(scrollViewDidEndDragging:willDecelerate:), (IMP)SB_scrollViewDidEndDragging, (IMP *)&original_SB_scrollViewDidEndDragging);
+    
     MSHookMessageEx(cls, @selector(scrollViewWillBeginDragging:), (IMP)SB_scrollViewWillBeginDragging, (IMP *)&original_SB_scrollViewWillBeginDragging);
 
     //iOS 7 bug hotfix
