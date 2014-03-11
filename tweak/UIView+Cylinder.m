@@ -20,6 +20,17 @@ along with Cylinder.  If not, see <http://www.gnu.org/licenses/>.
 #import "UIView+Cylinder.h"
 #import <objc/objc.h>
 
+@interface CLTransformLayer : CATransformLayer
+@end
+
+@implementation CLTransformLayer
+- (void)setOpaque:(BOOL)opaque
+{
+    // fix for excessive "changing property opaque in transform-only layer, will have no effect" messages we don't care about
+    return;
+}
+@end
+
 @interface CLTransformView : UIView
 
 - (instancetype)initByReplacingView:(UIView *)viewToReplace;
@@ -35,7 +46,7 @@ along with Cylinder.  If not, see <http://www.gnu.org/licenses/>.
 
 + (Class)layerClass
 {
-    return [CATransformLayer class];
+    return [CLTransformLayer class];
 }
 
 + (void)replaceView:(UIView *)old withView:(UIView *)new
