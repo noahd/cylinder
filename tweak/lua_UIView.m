@@ -20,6 +20,7 @@ along with Cylinder.  If not, see <http://www.gnu.org/licenses/>.
 #import <lua/lua.h>
 #import <lua/lauxlib.h>
 #import "lua_UIView.h"
+#import "UIView+Cylinder.h"
 
 static int l_transform_rotate(lua_State *L);
 static int l_transform_translate(lua_State *L);
@@ -30,6 +31,14 @@ static int l_get_transform(lua_State *L, CALayer *self); //pushes transform to t
 static int l_nsobject_index(lua_State *L);
 static int l_nsobject_setindex(lua_State *L);
 static int l_nsobject_len(lua_State *L);
+
+int l_push_view(lua_State *L, id view)
+{
+    lua_pushlightuserdata(L, view);
+    luaL_getmetatable(L, "nsobject");
+    lua_setmetatable(L, -2);
+    return 1;
+}
 
 int l_create_uiview_metatable(lua_State *L)
 {
@@ -51,20 +60,18 @@ int l_create_uiview_metatable(lua_State *L)
 
 //screw good practice, i dont have time for casting and
 //private header files
-typedef unsigned int (*maxicons_func)(id, SEL);
-typedef unsigned int (*maxrowcols_func)(id, SEL, UIDeviceOrientation);
-int invoke_int(id self, SEL selector, BOOL use_orientation)
+static int invoke_int(id self, SEL selector, BOOL use_orientation)
 {
     IMP imp = [self methodForSelector:selector];
     if(use_orientation)
     {
-        maxrowcols_func f = (maxrowcols_func)imp;
-        return (int)f(self, selector, UIDevice.currentDevice.orientation);
+        typedef int (*functype)(id, SEL, UIDeviceOrientation);
+        return ((functype)imp)(self, selector, UIDevice.currentDevice.orientation);
     }
     else
     {
-        maxicons_func f = (maxicons_func)imp;
-        return (int)f(self, selector);
+        typedef int (*functype)(id, SEL);
+        return ((functype)imp)(self, selector);
     }
 }
 
@@ -76,8 +83,7 @@ static int l_uiview_index(lua_State *L)
         int index = lua_tonumber(L, 2) - 1;
         if(index >= 0 && index < self.subviews.count)
         {
-            push_view([self.subviews objectAtIndex:index]);
-            return 1;
+            return l_push_view(L, [self.subviews objectAtIndex:index]);
         }
     }
     else if(lua_isstring(L, 2))
@@ -90,7 +96,7 @@ static int l_uiview_index(lua_State *L)
             for(int i = 0; i < self.subviews.count; i++)
             {
                 lua_pushnumber(L, i+1);
-                push_view([self.subviews objectAtIndex:i]);
+                l_push_view(L, [self.subviews objectAtIndex:i]);
                 lua_settable(L, -3);
             }
             return 1;
@@ -165,8 +171,7 @@ static int l_uiview_index(lua_State *L)
         else if(!strcmp(key, "layer"))
         {
             self.isOnScreen = true;
-            push_view(self.layer);
-            return 1;
+            return l_push_view(L, self.layer);
         }
     }
 

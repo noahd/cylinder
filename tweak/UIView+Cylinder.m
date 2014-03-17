@@ -18,7 +18,8 @@ along with Cylinder.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #import "UIView+Cylinder.h"
-#import <objc/objc.h>
+#import "CALayer+Cylinder.h"
+#import <objc/runtime.h>
 
 @interface CLTransformLayer : CATransformLayer
 @end

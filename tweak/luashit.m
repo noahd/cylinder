@@ -23,18 +23,10 @@ along with Cylinder.  If not, see <http://www.gnu.org/licenses/>.
 #import "macros.h"
 #import "lua_UIView.h"
 
-#define CHECK_UIVIEW(STATE, INDEX) \
-    if(!lua_isuserdata(STATE, INDEX) || ![(NSObject *)lua_touserdata(STATE, INDEX) isKindOfClass:UIView.class]) \
-        return luaL_error(STATE, "first argument must be a view")
 
 #define LOG_DIR @"/var/mobile/Library/Logs/Cylinder/"
 #define LOG_PATH "errors.log"
 #define PRINT_PATH "print.log"
-
-//this allows a 3D perspective, sometimes this value is needed
-//for transformations that translate, THEN rotate. (like cube,
-//page flip, etc)
-#define PERSPECTIVE_DISTANCE 500.0
 
 static lua_State *L = NULL;
 
@@ -49,8 +41,8 @@ static int l_popup(lua_State *L);
 
 static const char * get_stack(lua_State *L, const char *strr);
 
-void write_error(const char *error);
-void write_file(const char *msg, const char *filename);
+static void write_error(const char *error);
+static void write_file(const char *msg, const char *filename);
 
 static const char *OS_DANGER[] = {
     "exit",
@@ -75,7 +67,7 @@ static void remove_script(int index)
     [_scriptNames removeObjectAtIndex:index];
 }
 
-NSDictionary *gen_error_dict(NSString *script, BOOL broken)
+static NSDictionary *gen_error_dict(NSString *script, BOOL broken)
 {
     NSArray *components = script.pathComponents;
     NSString *folder = [components objectAtIndex:0];
@@ -88,7 +80,7 @@ NSDictionary *gen_error_dict(NSString *script, BOOL broken)
         nil];
 }
 
-void error_notification(NSArray *errors)
+static void error_notification(NSArray *errors)
 {
     NSData *data = [NSPropertyListSerialization dataFromPropertyList:errors format:NSPropertyListBinaryFormat_v1_0 errorDescription:NULL];
     if(data)
@@ -197,7 +189,7 @@ static void set_environment(const char *script)
 }
 
 
-int open_script(const char *script)
+static int open_script(const char *script)
 {
     int func = -1;
 
@@ -361,12 +353,12 @@ static int l_subviews(lua_State *L)
 }
 
 
-void write_error(const char *error)
+static void write_error(const char *error)
 {
     write_file(error, LOG_PATH);
 }
 
-void write_file(const char *msg, const char *filename)
+static void write_file(const char *msg, const char *filename)
 {
     NSString *path = [LOG_DIR stringByAppendingPathComponent:[NSString stringWithUTF8String:filename]];
 
@@ -389,20 +381,12 @@ void write_file(const char *msg, const char *filename)
     [fileHandle closeFile];
 }
 
-static void push_view(id view)
-{
-    lua_pushlightuserdata(L, view);
-    luaL_getmetatable(L, "nsobject");
-    lua_setmetatable(L, -2);
-}
-
-
 static BOOL manipulate_step(UIView *view, float offset, int funcIndex)
 {
     int func = [[_scripts objectAtIndex:funcIndex] intValue];
     lua_rawgeti(L, LUA_REGISTRYINDEX, func);
 
-    push_view(view);
+    l_push_view(L, view);
     lua_pushnumber(L, offset);
     lua_pushnumber(L, SCREEN_SIZE.width);
     lua_pushnumber(L, SCREEN_SIZE.height);
