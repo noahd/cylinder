@@ -224,15 +224,14 @@ static void did_scroll(UIScrollView *scrollView)
 }
 
 //iOS 7 folder blur glitch hotfix for 3D effects.
-static CGRect(*original_SB_wallpaperRelativeBounds)(id, SEL);
-static CGRect SB_wallpaperRelativeBounds(id self, SEL _cmd)
+//Changed from bounds getter to center setter method, because that's where all the magic happens: this method actually sets the bounds ivar
+static void(*original_SB_setWallpaperRelativeCenter)(UIView *, SEL, CGPoint);
+static void SB_setWallpaperRelativeCenter(UIView *self, SEL _cmd, __unused CGPoint center)
 {
-    CGRect frame = original_SB_wallpaperRelativeBounds(self, _cmd);
-    if(frame.origin.x < 0) frame.origin.x = 0;
-    if(frame.origin.x > SCREEN_SIZE.width - frame.size.width) frame.origin.x = SCREEN_SIZE.width - frame.size.width;
-    if(frame.origin.y > SCREEN_SIZE.height - frame.size.height) frame.origin.y = SCREEN_SIZE.height - frame.size.height;
-    if(frame.origin.y < 0) frame.origin.y = 0;
-    return frame;
+    // Convert our own center point into screen coords and feed that into the original function (assuming the wallpaper is fullscreen)
+    // There might be a better way to do this...
+    CGPoint transformedCenter = [self.superview convertPoint: self.center toView: nil];
+    original_SB_setWallpaperRelativeCenter(self, _cmd, transformedCenter);
 }
 
 static void layout_icons(UIView *self)
@@ -363,7 +362,7 @@ static void initialize()
 
     //iOS 7 bug hotfix
     Class bg_cls = NSClassFromString(@"SBFolderIconBackgroundView");
-    if(bg_cls) MSHookMessageEx(bg_cls, @selector(wallpaperRelativeBounds), (IMP)SB_wallpaperRelativeBounds, (IMP *)&original_SB_wallpaperRelativeBounds);
+    if(bg_cls) MSHookMessageEx(bg_cls, @selector(setWallpaperRelativeCenter:), (IMP)SB_setWallpaperRelativeCenter, (IMP *)&original_SB_setWallpaperRelativeCenter);
 
     //iOS 6- not-all-icons-showing hotfix
     if(SB_list_class) MSHookMessageEx(SB_list_class, @selector(showIconImagesFromColumn:toColumn:totalColumns:visibleIconsJitter:), (IMP)SB_showIconImages, (IMP *)&original_SB_showIconImages);
