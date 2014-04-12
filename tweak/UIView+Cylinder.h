@@ -33,4 +33,8 @@ along with Cylinder.  If not, see <http://www.gnu.org/licenses/>.
 /// Reverses all actions done in \c -transformify and returns the original receiver.
 - (UIView *)detransformify;
 
+/// Returns the furthest ancestor of the receiver that isn't a window (duh).
+/// If the receiver doesn't have a superview, returns itself.
+- (UIView *)furthestNonWindowAncestor;
+
 @end

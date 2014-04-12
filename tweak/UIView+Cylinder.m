@@ -200,7 +200,19 @@ along with Cylinder.  If not, see <http://www.gnu.org/licenses/>.
 
 - (UIView *)detransformify
 {
+    // This method gets overridden for transform views, but here we're just a normal one
     return self;
+}
+
+- (UIView *)furthestNonWindowAncestor
+{
+    UIView *ancestor = self;
+    while (true)
+    {
+        UIView *next = ancestor.superview;
+        if (next && ![next isKindOfClass: [UIWindow class]]) ancestor = next;
+        else return ancestor;
+    }
 }
 
 @end

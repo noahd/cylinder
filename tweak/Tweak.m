@@ -228,9 +228,11 @@ static void did_scroll(UIScrollView *scrollView)
 static void(*original_SB_setWallpaperRelativeCenter)(UIView *, SEL, CGPoint);
 static void SB_setWallpaperRelativeCenter(UIView *self, SEL _cmd, __unused CGPoint center)
 {
-    // Convert our own center point into screen coords and feed that into the original function (assuming the wallpaper is fullscreen)
+    // Convert our own center point into global/wallpaper coords and feed that into the original function (assuming the wallpaper is fullscreen)
     // There might be a better way to do this...
-    CGPoint transformedCenter = [self.superview convertPoint: self.center toView: nil];
+    // TODO: Figure out which ancestor is actually necessary. The ancestor closest to the window (not the window itself, though, because rotation) works,
+    // the icon list view and its parent don't.
+    CGPoint transformedCenter = [self.superview convertPoint: self.center toView: self.furthestNonWindowAncestor];
     original_SB_setWallpaperRelativeCenter(self, _cmd, transformedCenter);
 }
 
