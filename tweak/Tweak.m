@@ -226,14 +226,15 @@ static void did_scroll(UIScrollView *scrollView)
 //iOS 7 folder blur glitch hotfix for 3D effects.
 //Changed from bounds getter to center setter method, because that's where all the magic happens: this method actually sets the bounds ivar
 static void(*original_SB_setWallpaperRelativeCenter)(UIView *, SEL, CGPoint);
-static void SB_setWallpaperRelativeCenter(UIView *self, SEL _cmd, __unused CGPoint center)
+static void SB_setWallpaperRelativeCenter(UIView *self, SEL _cmd, CGPoint center)
 {
     // Convert our own center point into global/wallpaper coords and feed that into the original function (assuming the wallpaper is fullscreen)
+    // If we're not shown on screen yet (i.e. don't have a window), let the first original value through. Delete buttons otherwise have the wrong color before the user scrolls.
     // There might be a better way to do this...
     // TODO: Figure out which ancestor is actually necessary. The ancestor closest to the window (not the window itself, though, because rotation) works,
     // the icon list view and its parent don't.
-    CGPoint transformedCenter = [self.superview convertPoint: self.center toView: self.furthestNonWindowAncestor];
-    original_SB_setWallpaperRelativeCenter(self, _cmd, transformedCenter);
+    if (self.window) center = [self.superview convertPoint: self.center toView: self.furthestNonWindowAncestor];
+    original_SB_setWallpaperRelativeCenter(self, _cmd, center);
 }
 
 static void layout_icons(UIView *self)
@@ -363,7 +364,7 @@ static void initialize()
     MSHookMessageEx(cls, @selector(scrollViewWillBeginDragging:), (IMP)SB_scrollViewWillBeginDragging, (IMP *)&original_SB_scrollViewWillBeginDragging);
 
     //iOS 7 bug hotfix
-    Class bg_cls = NSClassFromString(@"SBFolderIconBackgroundView");
+    Class bg_cls = NSClassFromString(@"SBIconBlurryBackgroundView");
     if(bg_cls) MSHookMessageEx(bg_cls, @selector(setWallpaperRelativeCenter:), (IMP)SB_setWallpaperRelativeCenter, (IMP *)&original_SB_setWallpaperRelativeCenter);
 
     //iOS 6- not-all-icons-showing hotfix
