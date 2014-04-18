@@ -31,6 +31,7 @@ static Class SB_list_class;
 static Class SB_icon_class;
 
 static BOOL _enabled;
+static BOOL _ignoreNextDidScroll;
 
 static u_int32_t _rand;
 static int _page = -100;
@@ -162,6 +163,25 @@ static void SB_scrollViewDidEndDragging(id self, SEL _cmd, UIScrollView *scrollV
         // In some cases (especially with the transform layer), not calling this will lead to glitchy behavior,
         // e.g. the homescreen page missing after the first unlock
         end_scroll(scrollView);
+        
+        // Fixes weird icon disappearance problem when scrolling is interrupted.
+        // Happens because specifically the icon scroll view (on iOS 7, maybe earlier too)
+        // generates an additional didScroll call after calling this delegate method, but only when over 1/2 of the next page is visible.
+        // This will, in turn, call genscrol and retransformify the list view, leading to the same glitches as mentioned above.
+        // I've verified this with Cycript in Safe Mode, so it's not a side effect of anything Cylinder or another tweak is doing.
+        
+        // Example:
+        // 1. User starts scrolling at page n
+        // 2. User reaches n + 0.6
+        // 3. User presses power button, keeping their finger on the device
+        // 4. Scroll view sends didScroll with content offset of n + 1 (default UIScrollView snapping behavior)
+        // 5. Scroll view sends didEndDragging method, willDecelerate == NO
+        // 6. end_scroll called
+        // 7. [IGNORE] Scroll view sends didScroll with content offset of n (seemingly special SpringBoard snapping behavior)
+        
+        // No way to know here if the user scrolled more than halfway through the page, so better be safe than sorry.
+        // The content offset will be the rounded one already, and the variable is reset in willBeginDragging anyway.
+        _ignoreNextDidScroll = YES;
     }
 }
 
@@ -169,6 +189,8 @@ static void SB_scrollViewDidEndDragging(id self, SEL _cmd, UIScrollView *scrollV
 static void(*original_SB_scrollViewWillBeginDragging)(id, SEL, id);
 static void SB_scrollViewWillBeginDragging(id self, SEL _cmd, UIScrollView *scrollView)
 {
+    // The next didScroll is pretty much guaranteed to come from the user, so allow it no matter what
+    _ignoreNextDidScroll = NO;
     original_SB_scrollViewWillBeginDragging(self, _cmd, scrollView);
     if(IOS_VERSION < 7)
         [scrollView.superview sendSubviewToBack:scrollView];
@@ -196,6 +218,11 @@ static void(*original_SB_scrollViewDidScroll)(id, SEL, id);
 static void SB_scrollViewDidScroll(id self, SEL _cmd, UIScrollView *scrollView)
 {
     original_SB_scrollViewDidScroll(self, _cmd, scrollView);
+    if (_ignoreNextDidScroll)
+    {
+        _ignoreNextDidScroll = NO;
+        return;
+    }
     did_scroll(scrollView);
 }
 
