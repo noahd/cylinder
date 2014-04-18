@@ -175,7 +175,7 @@ static void SB_scrollViewDidEndDragging(id self, SEL _cmd, UIScrollView *scrollV
         // 2. User reaches n + 0.6
         // 3. User presses power button, keeping their finger on the device
         // 4. Scroll view sends didScroll with content offset of n + 1 (default UIScrollView snapping behavior)
-        // 5. Scroll view sends didEndDragging method, willDecelerate == NO
+        // 5. Scroll view sends didEndDragging message, willDecelerate == NO
         // 6. end_scroll called
         // 7. [IGNORE] Scroll view sends didScroll with content offset of n (seemingly special SpringBoard snapping behavior)
         
